@@ -1,1 +1,79 @@
-import { StyleSheet, Text, View , Button,Image,TouchableOpacity} from 'react-native' import React from 'react' import DocumentPicker from 'react-native-document-picker'; import Sound from 'react-native-sound'; import AntDesign from 'react-native-vector-icons/AntDesign'; import FeatherDesign from 'react-native-vector-icons/Feather'; import audio from '../../assets/sample1.mp3' const Home = () => { const [sound, setSound] = React.useState(null); const [isPlaying, setIsPlaying] = React.useState(false); const [currentTime, setCurrentTime] = React.useState(0); const [duration, setDuration] = React.useState(0); React.useEffect(() => { if (sound) { // Update the duration when the sound is loaded sound.getCurrentTime((seconds) => { setDuration(seconds); }); // Listen for updates to the current time const timer = setInterval(() => { sound.getCurrentTime((seconds) => { setCurrentTime(seconds); }); }, 1000); return () => { // Clean up the timer when the component unmounts clearInterval(timer); }; } }, [sound]); const playPauseToggle = () => { if (sound) { if (isPlaying) { sound.pause(); } else { sound.play(() => { // Sound playback finished setIsPlaying(false); }); } setIsPlaying(!isPlaying); } }; const onSliderValueChange = (value) => { if (sound) { sound.setCurrentTime(value); setCurrentTime(value); } }; const pickMP3 = async () => { try { const result = await DocumentPicker.pick({ type: [DocumentPicker.types.audio,'audio/mpeg','audio/mp3'], }); console.log("result",result); // Check if result is undefined or null before accessing its properties if (result[0] && result[0].uri) { const mp3File = new Sound(audio, Sound.MAIN_BUNDLE, (error) => { if (error) { console.error('Failed to load sound', error); return; } console.log("mp3Filemp3File",mp3File) setSound(mp3File); mp3File.play(() => mp3File.release()); }); } else { console.log('No file selected'); } } catch (err) { if (DocumentPicker.isCancel(err)) { // User canceled the file picker console.log('File picking canceled'); } else { // Handle other errors console.error(`Error picking MP3 file: ${err}`); } } }; return ( // <View> // </View> <View style={styles.container}> <Button title="Pick MP3" onPress={pickMP3} /> <Image source={{uri:'https://unsplash.com/photos/eybM9n4yrpE'}} style={styles.soundIcon} /> <Text style={styles.title}>Sound Title</Text> <View style={styles.controls}> <TouchableOpacity onPress={playPauseToggle}> <AntDesign name={isPlaying ? "pausecircle" : "play"} size={30}/> </TouchableOpacity> <Text style={styles.timeText}> {`${Math.floor(currentTime / 60)}:${Math.floor(currentTime % 60)}`} </Text> {/* <Slider style={styles.slider} minimumValue={0} maximumValue={duration} value={currentTime} onValueChange={onSliderValueChange} /> */} <Text style={styles.timeText}> {`${Math.floor(duration / 60)}:${Math.floor(duration % 60)}`} </Text> <TouchableOpacity onPress={() => sound && sound.stop()}> <FeatherDesign name="stop-circle" size={30}/> </TouchableOpacity> </View> </View> ) } export default Home const styles = StyleSheet.create({ container: { flex: 1, justifyContent: 'center', alignItems: 'center', }, soundIcon: { width: 100, height: 100, }, title: { fontSize: 24, fontWeight: 'bold', marginTop: 20, }, controls: { flexDirection: 'row', alignItems: 'center', marginTop: 20, }, playPauseButton: { width: 50, height: 50, }, timeText: { fontSize: 16, marginHorizontal: 10, }, slider: { flex: 1, }, stopButton: { width: 40, height: 40, }, })
+import TrackPlayer from 'react-native-track-player';
+
+async function setup() {
+  await TrackPlayer.setupPlayer();
+  
+  TrackPlayer.addEventListener('remote-play', () => {
+    TrackPlayer.play();
+  });
+
+  TrackPlayer.addEventListener('remote-pause', () => {
+    TrackPlayer.pause();
+  });
+
+  // Add more event listeners and setup as needed
+
+  TrackPlayer.updateOptions({
+    // Configuration options here
+  });
+}
+
+export default { setup };
+
+
+///////////////////////////
+
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, FlatList } from 'react-native';
+import TrackPlayerService from './TrackPlayerService';
+
+const tracks = [
+  {
+    id: '1',
+    title: 'Track 1',
+    artist: 'Artist 1',
+    url: 'https://example.com/track1.mp3',
+  },
+  // Add more tracks here
+];
+
+function AudioPlayerForm() {
+  const [selectedTrack, setSelectedTrack] = useState(null);
+
+  useEffect(() => {
+    TrackPlayerService.setup();
+  }, []);
+
+  const playTrack = async (track) => {
+    if (selectedTrack === track.id) {
+      await TrackPlayer.pause();
+      setSelectedTrack(null);
+    } else {
+      await TrackPlayer.reset();
+      await TrackPlayer.add(track);
+      await TrackPlayer.play();
+      setSelectedTrack(track.id);
+    }
+  };
+
+  return (
+    <View>
+      <Text>Select a track to play:</Text>
+      <FlatList
+        data={tracks}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View>
+            <Text>{item.title} - {item.artist}</Text>
+            <Button
+              title={selectedTrack === item.id ? 'Pause' : 'Play'}
+              onPress={() => playTrack(item)}
+            />
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+export default AudioPlayerForm;
