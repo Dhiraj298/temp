@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Button, StyleSheet, TouchableOpacity, Image, Text } from 'react-native';
+import { View, Button, StyleSheet, TouchableOpacity, Image, Text, AppState } from 'react-native';
 import DocumentPicker from 'react-native-document-picker';
 import TrackPlayer, { Capability, State, usePlaybackState, useProgress } from 'react-native-track-player';
 import ProgressBar from 'react-native-progress/Bar';
@@ -31,13 +31,26 @@ const AudioPicker = () => {
 
     useEffect(() => {
         setupPlayer()
+        return async () => {
+            
+            await TrackPlayer.pause();
+            await TrackPlayer.reset();
+        }
     }, [])
+
+    const componentWillUnmount = async () => {
+        AppState.removeEventListener('change', this._handleStateChange);
+        await TrackPlayer.reset();
+        await TrackPlayer.stop();
+    }
 
     const setupPlayer = async () => {
         try {
             await TrackPlayer.setupPlayer();
+
             // await TrackPlayer.setRepeatMode(RepeatMode.Track);
             await TrackPlayer.updateOptions({
+                stopWithApp: true,
                 // Media controls capabilities
                 capabilities: [
                     Capability.Play,
@@ -114,7 +127,7 @@ const AudioPicker = () => {
         await TrackPlayer.reset();
     };
     const progress = useProgress();
-    const progressValue =(progress.position == 0 && progress.duration == 0) ? 0 : progress.position / progress.duration;
+    const progressValue = (progress.position == 0 && progress.duration == 0) ? 0 : progress.position / progress.duration;
     const progressValue2 = progressValue == NaN ? progress.position : progressValue.toFixed(2);
     let bufferValue = progress.buffered;
     const logQueuedTracks = async () => {
@@ -128,7 +141,7 @@ const AudioPicker = () => {
     }
 
     return (
-        console.log(progress, progressValue,progressValue2),
+        console.log(progress, progressValue, progressValue2),
         <View style={{ marginTop: 100 }}>
             <View >
                 <Button title="Pick Audio" color={'green'} onPress={pickAudio} />
