@@ -1,0 +1,55 @@
+const formik = useFormik({
+        initialValues: { title: '' },
+        onSubmit: values => {
+            console.log("Question audio upload " + BASE_URL + Question_Audio_API);
+            RNFetchBlob.fetch('POST', BASE_URL + Question_Audio_API, {
+                'Authorization': `${token_type} ${access_token}`,
+                'Content-Type': 'multipart/form-data',
+            },
+                [{
+                    name: 'questionMP3',
+                    filename: fileUri,
+                    type: 'audio/mp3',
+                    data: RNFetchBlob.wrap(audioContent[question_ID])
+                },
+                {
+                    name: 'project_ID',
+                    data: project_ID.toString()
+                },
+                {
+                    name: 'projectsTask_ID',
+                    data: projectsTask_ID.toString()
+                },
+                {
+                    name: 'question_ID',
+                    data: question_ID.toString()
+                },
+                {
+                    name: 'questionType_ID',
+                    data: questionType_ID.toString()
+                },
+                {
+                    name: 'user_ID',
+                    data: user_ID.toString()
+                },
+                ])
+ 
+                .then((resp) => resp.json())
+
+                .then((resp) => {
+
+                    console.log("question image upload response" + JSON.stringify(resp));
+
+                    if (resp?.Status.StatusDesc === "success") {
+
+                        Alert.alert('Success', "Audio Uploaded Successfully", [{ text: 'Okay' }]);
+                    }
+                    else {
+
+                        Alert.alert('Failure', "Unable To Upload Audio", [{ text: 'Okay' }]);
+                    }
+                }).catch((err) => {
+                    Alert.alert('An error occurred!', err.message, [{ text: 'Okay' }]);
+                })
+        }
+    });
