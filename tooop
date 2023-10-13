@@ -1,55 +1,158 @@
-const formik = useFormik({
-        initialValues: { title: '' },
-        onSubmit: values => {
-            console.log("Question audio upload " + BASE_URL + Question_Audio_API);
-            RNFetchBlob.fetch('POST', BASE_URL + Question_Audio_API, {
-                'Authorization': `${token_type} ${access_token}`,
-                'Content-Type': 'multipart/form-data',
-            },
-                [{
-                    name: 'questionMP3',
-                    filename: fileUri,
-                    type: 'audio/mp3',
-                    data: RNFetchBlob.wrap(audioContent[question_ID])
-                },
-                {
-                    name: 'project_ID',
-                    data: project_ID.toString()
-                },
-                {
-                    name: 'projectsTask_ID',
-                    data: projectsTask_ID.toString()
-                },
-                {
-                    name: 'question_ID',
-                    data: question_ID.toString()
-                },
-                {
-                    name: 'questionType_ID',
-                    data: questionType_ID.toString()
-                },
-                {
-                    name: 'user_ID',
-                    data: user_ID.toString()
-                },
-                ])
- 
-                .then((resp) => resp.json())
 
-                .then((resp) => {
+  const handleSubbmitt = async () => {
+    const questionAudios = [];
+    const audioRes = audioList.forEach((counter) => {
+      const questionAudio = [{
+        name: 'questionMP3',
+        filename: audioContent[counter.question_ID].toString(),
+        type: 'audio/mp3',
+        data: RNFetchBlob.wrap(audioContent[counter.question_ID])
+      },
+      {
+        name: 'project_ID',
+        data: selectedProjectListItem.projectId.toString()
+      },
+      {
+        name: 'projectsTask_ID',
+        data: selectedProjectListItem.scheduleSlotProjectTaskId.toString()
+      },
+      {
+        name: 'question_ID',
+        data: counter.question_ID.toString()
+      },
+      {
+        name: 'questionType_ID',
+        data: counter.questionType_ID.toString()
+      },
+      {
+        name: 'user_ID',
+        data: user.Response.user_id.toString()
+      }
+    ]
 
-                    console.log("question image upload response" + JSON.stringify(resp));
+      questionAudios.push(questionAudio);
+    })
 
-                    if (resp?.Status.StatusDesc === "success") {
+    console.log("questionAudios =>",questionAudios)
 
-                        Alert.alert('Success', "Audio Uploaded Successfully", [{ text: 'Okay' }]);
-                    }
-                    else {
+    RNFetchBlob.fetch('POST', BASE_URL + Question_Audio_API, {
+      'Authorization': `${token_type} ${access_token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+      questionAudios)
 
-                        Alert.alert('Failure', "Unable To Upload Audio", [{ text: 'Okay' }]);
-                    }
-                }).catch((err) => {
-                    Alert.alert('An error occurred!', err.message, [{ text: 'Okay' }]);
-                })
+      .then((resp) => resp.json())
+
+      .then((resp) => {
+
+        console.log("question audio upload response" + JSON.stringify(resp));
+
+        if (resp?.Status.StatusDesc === "success") {
+
+          console.log('Success', "Audio Uploaded Successfully");
+          // audioContent[counter.question_ID] = '';
+
         }
-    });
+        else {
+
+          console.log('Failure', "Unable To Upload Audio", "counter.question_ID");
+        }
+      }).catch((err) => {
+        console.log('An error occurred!', err.message, " counter.question_ID");
+      })
+
+
+
+  }
+
+  const handleSubmit = async () => { //Function:To handle submit button
+    const questList = questionList;
+    const audioRes = audioList.forEach((counter) => {
+      if (audioContent[counter.question_ID]) {
+        console.log("counter.question_ID ", counter.question_ID)
+
+        RNFetchBlob.fetch('POST', BASE_URL + Question_Audio_API, {
+          'Authorization': `${token_type} ${access_token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+          [{
+            name: 'questionMP3',
+            filename: audioContent[counter.question_ID].toString(),
+            type: 'audio/mp3',
+            data: RNFetchBlob.wrap(audioContent[counter.question_ID])
+          },
+          {
+            name: 'project_ID',
+            data: selectedProjectListItem.projectId.toString()
+          },
+          {
+            name: 'projectsTask_ID',
+            data: selectedProjectListItem.scheduleSlotProjectTaskId.toString()
+          },
+          {
+            name: 'question_ID',
+            data: counter.question_ID.toString()
+          },
+          {
+            name: 'questionType_ID',
+            data: counter.questionType_ID.toString()
+          },
+          {
+            name: 'user_ID',
+            data: user.Response.user_id.toString()
+          },
+          ])
+
+          .then((resp) => resp.json())
+
+          .then((resp) => {
+
+            console.log("question audio upload response" + JSON.stringify(resp));
+
+            if (resp?.Status.StatusDesc === "success") {
+
+              console.log('Success', "Audio Uploaded Successfully");
+              audioContent[counter.question_ID] = '';
+
+            }
+            else {
+
+              console.log('Failure', "Unable To Upload Audio", "counter.question_ID", counter.question_ID);
+            }
+          }).catch((err) => {
+            console.log('An error occurred!', err.message, " counter.question_ID", counter.question_ID);
+          })
+        // return acc;
+      }
+      // return acc;
+    })
+    console.log("audioRES ", audioRes)
+
+    const likerTQuestResponse = tempData.reduce((acc, counter) => {
+      if (myQuest[counter.question_ID]) {
+        let selectedChoices = [];
+        let selectedLikerValues = [];
+        const choiceIndexList = Object.keys(myQuest[`${counter.question_ID}`]);
+        const likerIndexList = Object.values(myQuest[`${counter.question_ID}`]);
+        if (choiceIndexList.length > 0 && likerIndexList.length > 0) {
+          selectedChoices = choiceIndexList.map(choiceIndex => `${counter.choiceName_array[choiceIndex].choiceName_ID}`);
+          selectedLikerValues = likerIndexList.map(likerIndex => `${counter.likertScaleName_array[likerIndex - 1].questionLikertScale_ID}`);
+        }
+
+        acc[counter.question_ID] = {
+          question_ID: `${counter.question_ID}`,
+          questionType_ID: counter.questionType_ID,
+          questionChoice_ID: selectedChoices,
+          questionLikertScale_ID: selectedLikerValues
+        }
+        return acc;
+      }
+      return acc;
+    }, {})
+    console.log("likerTQuestResponse" + JSON.stringify(likerTQuestResponse));
+    await AsyncStorage.removeItem('tempDataOfUsageOverviewForm')
+    await AsyncStorage.removeItem('tempDataOfUsageOverviewFormS')
+    await AsyncStorage.removeItem('tempDataOfUsageOverviewFormLikert')
+    dispatch(addProjectTaskQuestionListAnswer(Object.values(answers)));
+    dispatch(submitProjectTaskQuestionList({ user_ID: user.Response.user_id, projectsTask_ID: selectedProjectListItem.scheduleSlotFormProjectTaskId, project_ID: selectedProjectListItem.projectId, questions: [...selectedAnswerList, ...Object.values({ ...answers, ...likerTQuestResponse })] }));
+  };
